@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gantt Smart Factory 2030</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .gantt-grid {
+            display: grid;
+            grid-template-columns: 300px repeat(24, 45px);
+            overflow-x: auto;
+        }
+        .month-header {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            font-size: 11px;
+            text-align: center;
+            border-right: 1px solid #e5e7eb;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .task-name {
+            padding: 8px 12px;
+            font-size: 13px;
+            background: white;
+            position: sticky;
+            left: 0;
+            z-index: 10;
+            border-right: 3px solid #3b82f6;
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+        }
+        .bar {
+            height: 24px;
+            margin: auto 2px;
+            border-radius: 6px;
+            opacity: 0.85;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            padding-left: 8px;
+            font-size: 10px;
+            color: white;
+            font-weight: bold;
+            overflow: hidden;
+        }
+        .bar:hover { 
+            opacity: 1; 
+            transform: scaleY(1.1);
+        }
+        
+        .phase-1 { background-color: #2563eb; } /* Socle */
+        .phase-2 { background-color: #059669; } /* Déploiement */
+        .phase-3 { background-color: #d97706; } /* Métier */
+        .phase-4 { background-color: #7c3aed; } /* Sécurité Finale */
+    </style>
+</head>
+<body class="bg-slate-100 p-6">
+    <div class="max-w-full bg-white rounded-2xl shadow-2xl p-8">
+        <div class="flex justify-between items-end mb-8 border-b pb-6">
+            <div>
+                <h1 class="text-3xl font-extrabold text-slate-800">Smart Factory 2030</h1>
+                <p class="text-lg text-slate-500 mt-1">Planning de Transformation IT & Industrielle</p>
+            </div>
+            <div class="flex gap-6 text-sm font-semibold">
+                <div class="flex items-center"><span class="w-4 h-4 phase-1 rounded mr-2"></span> Socle</div>
+                <div class="flex items-center"><span class="w-4 h-4 phase-2 rounded mr-2"></span> Sites</div>
+                <div class="flex items-center"><span class="w-4 h-4 phase-3 rounded mr-2"></span> Business</div>
+                <div class="flex items-center"><span class="w-4 h-4 phase-4 rounded mr-2"></span> Run</div>
+            </div>
+        </div>
+
+        <div class="gantt-grid border border-slate-200 rounded-xl overflow-hidden bg-white">
+            <div class="bg-slate-50 border-b border-slate-200"></div>
+            <script>
+                const startMonth = 4; // Mai
+                const startYear = 2026;
+                const monthLabels = ["Jan", "Fév", "Mars", "Avr", "Mai", "Juin", "Juil", "Août", "Sept", "Oct", "Nov", "Déc"];
+                for (let i = 0; i < 24; i++) {
+                    const currentMonthTotal = startMonth + i;
+                    const year = startYear + Math.floor(currentMonthTotal / 12);
+                    const label = monthLabels[currentMonthTotal % 12];
+                    document.write(`<div class="month-header bg-slate-50 text-slate-500 border-b border-slate-200 font-bold">${label} ${year}</div>`);
+                }
+            </script>
+
+            <div id="gantt-body" class="contents"></div>
+        </div>
+        
+        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="p-4 bg-blue-50 rounded-lg border border-blue-100 text-blue-800 text-sm">
+                <strong>💡 Pourquoi un Site Pilote ?</strong> On déploie d'abord sur Wolfisheim pour tester la configuration réelle avant de dupliquer la méthode sur les autres usines. Cela évite de bloquer toute l'entreprise en cas de bug.
+            </div>
+            <div class="p-4 bg-purple-50 rounded-lg border border-purple-100 text-purple-800 text-sm">
+                <strong>🛡️ Stratégie 4-3-2 :</strong> Mise en place du NAS local + Cloud immuable dès le mois 3 pour garantir qu'aucune donnée ne soit perdue durant les migrations lourdes.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const tasks = [
+            { name: "Migration Réseau (Palo Alto)", start: 0, duration: 2, phase: 1 },
+            { name: "AD vers M365 & Identité", start: 2, duration: 1, phase: 1 },
+            { name: "Migration Stockage (NAS/Cloud)", start: 2, duration: 2, phase: 1 },
+            { name: "Mise en place Stratégie 4-3-2", start: 3, duration: 1, phase: 1 },
+            { name: "Setup Monitoring & Sécu (EDR/PRTG)", start: 4, duration: 2, phase: 1 },
+            
+            { name: "Usine Pilote : Wolfisheim", start: 6, duration: 3, phase: 2 },
+            { name: "Déploiement : Lingolsheim", start: 9, duration: 3, phase: 2 },
+            { name: "Déploiement : Mittelhausbergen", start: 12, duration: 3, phase: 2 },
+            
+            { name: "Migration ERP Sylob", start: 15, duration: 4, phase: 3 },
+            { name: "IoT Edge & Data Machines", start: 17, duration: 3, phase: 3 },
+            { name: "Formation Utilisateurs", start: 19, duration: 3, phase: 3 },
+            
+            { name: "Audit Sécurité Final", start: 22, duration: 1, phase: 4 },
+            { name: "Passage en Mode RUN (Support)", start: 23, duration: 1, phase: 4 }
+        ];
+
+        const body = document.getElementById('gantt-body');
+
+        tasks.forEach(task => {
+            const nameEl = document.createElement('div');
+            nameEl.className = 'task-name text-slate-700 font-semibold border-b border-slate-100';
+            nameEl.innerText = task.name;
+            body.appendChild(nameEl);
+
+            for (let i = 0; i < 24; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'border-r border-slate-100 border-b border-slate-50 relative flex items-center';
+                
+                if (i === Math.floor(task.start)) {
+                    const bar = document.createElement('div');
+                    bar.className = `bar phase-${task.phase} absolute z-0 shadow-md`;
+                    bar.style.width = `calc(${task.duration * 45}px - 6px)`;
+                    bar.style.left = '3px';
+                    bar.innerText = task.duration >= 2 ? `${task.duration}m` : "";
+                    slot.appendChild(bar);
+                }
+                body.appendChild(slot);
+            }
+        });
+    </script>
+</body>
+</html>
