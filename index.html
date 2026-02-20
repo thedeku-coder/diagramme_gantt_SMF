@@ -3,197 +3,260 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestionnaire de Projet - Diagramme de Gantt</title>
+    <title>Gantt SMF - Correction Affichage</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .gantt-grid {
+        :root {
+            --col-width: 40px;
+            --label-width: 280px;
+        }
+        .gantt-container {
             display: grid;
-            grid-template-columns: 250px 1fr;
+            grid-template-columns: var(--label-width) 1fr;
+            border: 1px solid #e5e7eb;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
         }
-        .timeline-scroll {
+        .labels-column {
+            width: var(--label-width);
+            flex-shrink: 0;
+            background: #f9fafb;
+            border-right: 1px solid #e5e7eb;
+            z-index: 10;
+        }
+        .timeline-area {
             overflow-x: auto;
-            scrollbar-width: thin;
+            position: relative;
         }
-        .task-row {
-            height: 40px;
-            border-bottom: 1px solid #e5e7eb;
+        .gantt-row {
+            display: flex;
+            height: 45px;
+            align-items: center;
+            border-bottom: 1px solid #f3f4f6;
         }
-        .day-column {
-            min-width: 40px;
-            border-right: 1px solid #f3f4f6;
+        .header-row {
+            height: 50px;
+            background: #f3f4f6;
+            font-weight: 600;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        .day-cell {
+            width: var(--col-width);
+            min-width: var(--col-width);
+            height: 100%;
+            border-right: 1px solid #e5e7eb;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
         }
-        .progress-bar {
-            height: 24px;
-            border-radius: 4px;
+        .weekend {
+            background-color: #f1f5f9;
+        }
+        .bar-container {
+            position: absolute;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            pointer-events: none;
+        }
+        .task-bar {
+            height: 28px;
+            border-radius: 6px;
             position: relative;
-            transition: all 0.3s;
             cursor: pointer;
+            pointer-events: auto;
+            transition: transform 0.2s;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .task-bar:hover {
+            transform: scaleY(1.1);
+            filter: brightness(1.1);
         }
         .progress-fill {
             height: 100%;
-            background-color: rgba(255, 255, 255, 0.3);
-            border-radius: 4px 0 0 4px;
+            background: rgba(0,0,0,0.15);
+        }
+        .task-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            white-space: nowrap;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
         }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-900 font-sans">
+<body class="bg-slate-100 p-4 md:p-8">
 
-    <div class="max-w-7xl mx-auto p-6">
-        <header class="mb-8 flex justify-between items-center">
+    <div class="max-w-full mx-auto">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <div>
-                <h1 class="text-3xl font-bold text-blue-800">Planification du Projet SMF</h1>
-                <p class="text-gray-600">Suivi des phases et jalons de la transition Microsoft 365</p>
+                <h1 class="text-2xl font-bold text-slate-800">Migration Microsoft 365 - SMF</h1>
+                <p class="text-slate-500 text-sm">Planning opérationnel et suivi des jalons</p>
             </div>
-            <button onclick="addTask()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow transition">
-                + Ajouter une tâche
-            </button>
-        </header>
-
-        <!-- Filtres et Options -->
-        <div class="bg-white p-4 rounded-xl shadow-sm mb-6 flex gap-4 items-center">
-            <span class="font-semibold">Vue :</span>
-            <select id="viewRange" class="border rounded px-2 py-1 outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="30">30 jours</option>
-                <option value="60">60 jours</option>
-                <option value="90" selected>90 jours</option>
-            </select>
-        </div>
-
-        <!-- Gantt Container -->
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
-            <div class="gantt-grid bg-gray-100 font-semibold text-sm border-bottom border-gray-300">
-                <div class="p-4 border-r border-gray-300">Tâches / Phases</div>
-                <div class="timeline-scroll flex" id="timelineHeader">
-                    <!-- Généré par JS -->
-                </div>
-            </div>
-
-            <div id="ganttBody" class="max-h-[600px] overflow-y-auto">
-                <!-- Généré par JS -->
+            <div class="flex gap-2">
+                <select id="viewRange" onchange="renderGantt()" class="bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="30">30 Jours</option>
+                    <option value="60">60 Jours</option>
+                    <option value="90" selected>90 Jours</option>
+                </select>
+                <button onclick="addTask()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">
+                    + Nouvelle tâche
+                </button>
             </div>
         </div>
-        
-        <div class="mt-6 text-sm text-gray-500 italic">
-            * Cliquez sur une barre pour modifier la progression ou sur le texte pour renommer.
+
+        <div class="gantt-container shadow-xl">
+            <!-- Colonne des noms de tâches -->
+            <div class="labels-column">
+                <div class="header-row flex items-center px-4 text-slate-600">Tâches</div>
+                <div id="taskLabels"></div>
+            </div>
+
+            <!-- Zone de la timeline -->
+            <div class="timeline-area" id="timelineArea">
+                <div class="header-row flex" id="timelineHeader"></div>
+                <div id="timelineBody" class="relative"></div>
+            </div>
         </div>
     </div>
 
-    <!-- Modal de Modification (Simplifiée) -->
-    <div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl p-6 w-full max-w-md">
-            <h2 class="text-xl font-bold mb-4">Modifier la tâche</h2>
+    <!-- Modal d'édition -->
+    <div id="modal" class="fixed inset-0 bg-slate-900/50 hidden backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <h2 class="text-xl font-bold mb-4 text-slate-800">Détails de la tâche</h2>
             <div class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium">Nom de la tâche</label>
-                    <input type="text" id="editName" class="w-full border rounded p-2">
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Nom</label>
+                    <input type="text" id="editName" class="w-full border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
-                <div class="flex gap-4">
-                    <div class="flex-1">
-                        <label class="block text-sm font-medium">Progression (%)</label>
-                        <input type="number" id="editProgress" min="0" max="100" class="w-full border rounded p-2">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Début (Jour)</label>
+                        <input type="number" id="editStart" class="w-full border border-slate-200 rounded-lg p-2">
                     </div>
-                    <div class="flex-1">
-                        <label class="block text-sm font-medium">Couleur</label>
-                        <input type="color" id="editColor" class="w-full h-10 border rounded p-1">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Durée (Jours)</label>
+                        <input type="number" id="editDuration" class="w-full border border-slate-200 rounded-lg p-2">
                     </div>
                 </div>
-                <div class="flex justify-end gap-2 mt-6">
-                    <button onclick="closeModal()" class="px-4 py-2 text-gray-600">Annuler</button>
-                    <button onclick="saveTask()" class="px-4 py-2 bg-blue-600 text-white rounded">Enregistrer</button>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Progression (%)</label>
+                    <input type="range" id="editProgress" min="0" max="100" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                    <div id="progVal" class="text-right text-xs font-bold text-blue-600 mt-1">0%</div>
+                </div>
+                <div class="flex justify-end gap-3 pt-4">
+                    <button onclick="closeModal()" class="px-4 py-2 text-slate-500 hover:bg-slate-100 rounded-lg transition">Annuler</button>
+                    <button onclick="saveChanges()" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition">Enregistrer</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Données initiales basées sur le projet SMF
         let tasks = [
-            { id: 1, name: "Phase d'Audit et Inventaire", start: 0, duration: 10, progress: 100, color: "#3b82f6" },
-            { id: 2, name: "Configuration Entra ID", start: 8, duration: 15, progress: 60, color: "#10b981" },
-            { id: 3, name: "Migration des Données SharePoint", start: 20, duration: 25, progress: 30, color: "#f59e0b" },
-            { id: 4, name: "Déploiement Microsoft Intune", start: 35, duration: 20, progress: 10, color: "#8b5cf6" },
-            { id: 5, name: "Formation des Utilisateurs", start: 50, duration: 15, progress: 0, color: "#ec4899" },
-            { id: 6, name: "Recette et Clôture", start: 65, duration: 10, progress: 0, color: "#64748b" }
+            { id: 1, name: "Audit infrastructure SMF", start: 1, duration: 8, progress: 100, color: "#3b82f6" },
+            { id: 2, name: "Plan de migration Microsoft 365", start: 7, duration: 10, progress: 80, color: "#10b981" },
+            { id: 3, name: "Configuration Tenant & Sécurité", start: 15, duration: 12, progress: 40, color: "#f59e0b" },
+            { id: 4, name: "Migration boîtes mails (Batch 1)", start: 25, duration: 15, progress: 10, color: "#8b5cf6" },
+            { id: 5, name: "Déploiement OneDrive / SharePoint", start: 35, duration: 20, progress: 0, color: "#ec4899" },
+            { id: 6, name: "Support post-migration", start: 50, duration: 10, progress: 0, color: "#64748b" }
         ];
 
-        let currentEditId = null;
-        const startDate = new Date();
+        let currentId = null;
+        const colWidth = 40;
 
         function renderGantt() {
             const range = parseInt(document.getElementById('viewRange').value);
             const header = document.getElementById('timelineHeader');
-            const body = document.getElementById('ganttBody');
+            const labels = document.getElementById('taskLabels');
+            const body = document.getElementById('timelineBody');
             
-            // Header
             header.innerHTML = '';
+            labels.innerHTML = '';
+            body.innerHTML = '';
+
+            // 1. Render Header
+            const startTimestamp = new Date();
             for (let i = 0; i < range; i++) {
-                const day = new Date(startDate);
-                day.setDate(startDate.getDate() + i);
-                const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+                const date = new Date(startTimestamp);
+                date.setDate(date.getDate() + i);
+                const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                
                 header.innerHTML += `
-                    <div class="day-column flex-shrink-0 ${isWeekend ? 'bg-gray-200' : ''}">
-                        ${day.getDate()}/${day.getMonth() + 1}
+                    <div class="day-cell ${isWeekend ? 'weekend' : ''}">
+                        ${date.getDate()}/${date.getMonth() + 1}
                     </div>
                 `;
             }
 
-            // Body
-            body.innerHTML = '';
+            // 2. Render Rows
             tasks.forEach(task => {
-                const row = document.createElement('div');
-                row.className = 'gantt-grid task-row hover:bg-gray-50';
-                
-                row.innerHTML = `
-                    <div class="p-2 border-r border-gray-200 text-sm truncate flex items-center justify-between group">
-                        <span class="cursor-pointer" onclick="openEdit(${task.id})">${task.name}</span>
-                        <button onclick="deleteTask(${task.id})" class="text-red-400 opacity-0 group-hover:opacity-100 hover:text-red-600 transition">✕</button>
-                    </div>
-                    <div class="timeline-scroll flex relative items-center">
-                        ${generateBackgroundGrid(range)}
-                        <div class="progress-bar absolute shadow-sm flex items-center overflow-hidden" 
-                             style="left: ${task.start * 40}px; width: ${task.duration * 40}px; background-color: ${task.color}"
-                             onclick="openEdit(${task.id})">
-                            <div class="progress-fill" style="width: ${task.progress}%"></div>
-                            <span class="absolute w-full text-center text-[10px] text-white font-bold drop-shadow-md">
-                                ${task.progress}%
-                            </span>
-                        </div>
+                // Label
+                labels.innerHTML += `
+                    <div class="gantt-row px-4 text-sm font-medium text-slate-700 truncate border-b border-slate-100" title="${task.name}">
+                        ${task.name}
                     </div>
                 `;
+
+                // Row with grid lines and task bar
+                const row = document.createElement('div');
+                row.className = 'gantt-row relative';
+                row.style.width = (range * colWidth) + 'px';
+                
+                // Add background cells
+                for (let i = 0; i < range; i++) {
+                    const date = new Date(startTimestamp);
+                    date.setDate(date.getDate() + i);
+                    const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                    row.innerHTML += `<div class="day-cell ${isWeekend ? 'weekend' : ''}"></div>`;
+                }
+
+                // Add task bar
+                const barContainer = document.createElement('div');
+                barContainer.className = 'bar-container';
+                barContainer.style.left = ((task.start - 1) * colWidth) + 'px';
+                
+                barContainer.innerHTML = `
+                    <div class="task-bar" style="width: ${task.duration * colWidth}px; background-color: ${task.color}" onclick="openModal(${task.id})">
+                        <div class="progress-fill" style="width: ${task.progress}%"></div>
+                        <div class="task-text">${task.progress}%</div>
+                    </div>
+                `;
+                
+                row.appendChild(barContainer);
                 body.appendChild(row);
             });
         }
 
-        function generateBackgroundGrid(range) {
-            let grid = '';
-            for (let i = 0; i < range; i++) {
-                grid += `<div class="day-column flex-shrink-0 h-full border-r border-gray-50"></div>`;
-            }
-            return grid;
-        }
-
-        function openEdit(id) {
+        function openModal(id) {
+            currentId = id;
             const task = tasks.find(t => t.id === id);
-            currentEditId = id;
             document.getElementById('editName').value = task.name;
+            document.getElementById('editStart').value = task.start;
+            document.getElementById('editDuration').value = task.duration;
             document.getElementById('editProgress').value = task.progress;
-            document.getElementById('editColor').value = task.color;
-            document.getElementById('editModal').classList.remove('hidden');
+            document.getElementById('progVal').innerText = task.progress + '%';
+            document.getElementById('modal').classList.remove('hidden');
         }
 
         function closeModal() {
-            document.getElementById('editModal').classList.add('hidden');
+            document.getElementById('modal').classList.add('hidden');
         }
 
-        function saveTask() {
-            const task = tasks.find(t => t.id === currentEditId);
+        function saveChanges() {
+            const task = tasks.find(t => t.id === currentId);
             task.name = document.getElementById('editName').value;
+            task.start = parseInt(document.getElementById('editStart').value);
+            task.duration = parseInt(document.getElementById('editDuration').value);
             task.progress = parseInt(document.getElementById('editProgress').value);
-            task.color = document.getElementById('editColor').value;
             closeModal();
             renderGantt();
         }
@@ -202,21 +265,19 @@
             const newId = tasks.length > 0 ? Math.max(...tasks.map(t => t.id)) + 1 : 1;
             tasks.push({
                 id: newId,
-                name: "Nouvelle tâche",
+                name: "Nouvelle étape SMF",
                 start: 5,
-                duration: 10,
+                duration: 7,
                 progress: 0,
-                color: "#3b82f6"
+                color: "#6366f1"
             });
             renderGantt();
         }
 
-        function deleteTask(id) {
-            tasks = tasks.filter(t => t.id !== id);
-            renderGantt();
-        }
-
-        document.getElementById('viewRange').addEventListener('change', renderGantt);
+        // Update range value display
+        document.getElementById('editProgress').addEventListener('input', function(e) {
+            document.getElementById('progVal').innerText = e.target.value + '%';
+        });
 
         window.onload = renderGantt;
     </script>
