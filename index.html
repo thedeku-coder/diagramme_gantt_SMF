@@ -3,283 +3,235 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gantt SMF - Correction Affichage</title>
+    <title>Gantt Smart Factory 2030</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
-            --col-width: 40px;
-            --label-width: 280px;
+            --label-width: 300px;
+            --column-width: 45px;
+            --total-months: 24;
         }
-        .gantt-container {
-            display: grid;
-            grid-template-columns: var(--label-width) 1fr;
-            border: 1px solid #e5e7eb;
-            background: white;
-            border-radius: 8px;
+
+        .gantt-wrapper {
+            display: flex;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
             overflow: hidden;
+            background: white;
         }
-        .labels-column {
+
+        /* Colonne de gauche fixe */
+        .gantt-labels {
             width: var(--label-width);
             flex-shrink: 0;
-            background: #f9fafb;
-            border-right: 1px solid #e5e7eb;
-            z-index: 10;
+            background: #f8fafc;
+            border-right: 2px solid #e2e8f0;
+            z-index: 20;
         }
-        .timeline-area {
+
+        /* Zone de défilement à droite */
+        .gantt-timeline {
             overflow-x: auto;
+            flex-grow: 1;
             position: relative;
         }
-        .gantt-row {
+
+        .gantt-header {
             display: flex;
-            height: 45px;
-            align-items: center;
-            border-bottom: 1px solid #f3f4f6;
+            height: 70px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
         }
-        .header-row {
-            height: 50px;
-            background: #f3f4f6;
-            font-weight: 600;
-            border-bottom: 2px solid #e5e7eb;
-        }
-        .day-cell {
-            width: var(--col-width);
-            min-width: var(--col-width);
-            height: 100%;
-            border-right: 1px solid #e5e7eb;
+
+        .month-header {
+            width: var(--column-width);
+            min-width: var(--column-width);
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            font-size: 11px;
+            text-align: center;
+            border-right: 1px solid #e2e8f0;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.7rem;
+            color: #64748b;
+            font-weight: bold;
         }
-        .weekend {
-            background-color: #f1f5f9;
-        }
-        .bar-container {
-            position: absolute;
-            height: 100%;
+
+        .gantt-row {
             display: flex;
-            align-items: center;
-            pointer-events: none;
-        }
-        .task-bar {
-            height: 28px;
-            border-radius: 6px;
+            height: 45px;
+            border-bottom: 1px solid #f1f5f9;
             position: relative;
-            cursor: pointer;
-            pointer-events: auto;
-            transition: transform 0.2s;
+        }
+
+        .task-label-cell {
+            height: 45px;
+            padding: 0 16px;
             display: flex;
             align-items: center;
-            overflow: hidden;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            font-size: 13px;
+            font-weight: 600;
+            color: #334155;
+            background: white;
+            border-bottom: 1px solid #f1f5f9;
+            border-right: 3px solid #3b82f6;
         }
-        .task-bar:hover {
+
+        /* La grille de fond dans la timeline */
+        .grid-line {
+            width: var(--column-width);
+            min-width: var(--column-width);
+            height: 100%;
+            border-right: 1px solid #f1f5f9;
+        }
+
+        /* Les barres de tâches */
+        .bar {
+            position: absolute;
+            top: 10px;
+            height: 25px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            padding-left: 10px;
+            font-size: 10px;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s, filter 0.2s;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .bar:hover {
             transform: scaleY(1.1);
             filter: brightness(1.1);
         }
-        .progress-fill {
-            height: 100%;
-            background: rgba(0,0,0,0.15);
-        }
-        .task-text {
-            position: absolute;
-            width: 100%;
-            text-align: center;
-            color: white;
-            font-size: 11px;
-            font-weight: bold;
-            white-space: nowrap;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-        }
+
+        .phase-1 { background-color: #2563eb; } /* Socle */
+        .phase-2 { background-color: #059669; } /* Sites */
+        .phase-3 { background-color: #d97706; } /* Business */
+        .phase-4 { background-color: #7c3aed; } /* Run */
     </style>
 </head>
 <body class="bg-slate-100 p-4 md:p-8">
-
-    <div class="max-w-full mx-auto">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+    <div class="max-w-7xl mx-auto bg-white rounded-2xl shadow-2xl p-4 md:p-8">
+        
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 border-b pb-6 gap-4">
             <div>
-                <h1 class="text-2xl font-bold text-slate-800">Migration Microsoft 365 - SMF</h1>
-                <p class="text-slate-500 text-sm">Planning opérationnel et suivi des jalons</p>
+                <h1 class="text-3xl font-extrabold text-slate-800">Smart Factory 2030</h1>
+                <p class="text-lg text-slate-500 mt-1">Planning de Transformation IT & Industrielle</p>
             </div>
-            <div class="flex gap-2">
-                <select id="viewRange" onchange="renderGantt()" class="bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="30">30 Jours</option>
-                    <option value="60">60 Jours</option>
-                    <option value="90" selected>90 Jours</option>
-                </select>
-                <button onclick="addTask()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">
-                    + Nouvelle tâche
-                </button>
+            <div class="flex flex-wrap gap-4 text-xs font-semibold">
+                <div class="flex items-center"><span class="w-3 h-3 phase-1 rounded mr-2"></span> Socle</div>
+                <div class="flex items-center"><span class="w-3 h-3 phase-2 rounded mr-2"></span> Sites</div>
+                <div class="flex items-center"><span class="w-3 h-3 phase-3 rounded mr-2"></span> Business</div>
+                <div class="flex items-center"><span class="w-3 h-3 phase-4 rounded mr-2"></span> Run</div>
             </div>
         </div>
 
-        <div class="gantt-container shadow-xl">
-            <!-- Colonne des noms de tâches -->
-            <div class="labels-column">
-                <div class="header-row flex items-center px-4 text-slate-600">Tâches</div>
-                <div id="taskLabels"></div>
+        <!-- Gantt Container -->
+        <div class="gantt-wrapper">
+            <!-- Labels fixes -->
+            <div class="gantt-labels">
+                <div class="h-[70px] bg-slate-50 border-bottom border-slate-200"></div>
+                <div id="labels-container"></div>
             </div>
 
-            <!-- Zone de la timeline -->
-            <div class="timeline-area" id="timelineArea">
-                <div class="header-row flex" id="timelineHeader"></div>
-                <div id="timelineBody" class="relative"></div>
+            <!-- Timeline défilable -->
+            <div class="gantt-timeline">
+                <div class="gantt-header" id="header-months"></div>
+                <div id="timeline-rows" class="relative"></div>
             </div>
         </div>
-    </div>
-
-    <!-- Modal d'édition -->
-    <div id="modal" class="fixed inset-0 bg-slate-900/50 hidden backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
-            <h2 class="text-xl font-bold mb-4 text-slate-800">Détails de la tâche</h2>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Nom</label>
-                    <input type="text" id="editName" class="w-full border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none">
+        
+        <!-- Info Cards -->
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="p-4 bg-blue-50 rounded-xl border border-blue-100 text-blue-800 text-sm shadow-sm">
+                <div class="font-bold mb-1 flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Pourquoi un Site Pilote ?
                 </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Début (Jour)</label>
-                        <input type="number" id="editStart" class="w-full border border-slate-200 rounded-lg p-2">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Durée (Jours)</label>
-                        <input type="number" id="editDuration" class="w-full border border-slate-200 rounded-lg p-2">
-                    </div>
+                On déploie d'abord sur Wolfisheim pour tester la configuration réelle avant de dupliquer la méthode sur les autres usines.
+            </div>
+            <div class="p-4 bg-purple-50 rounded-xl border border-purple-100 text-purple-800 text-sm shadow-sm">
+                <div class="font-bold mb-1 flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                    Stratégie 4-3-2
                 </div>
-                <div>
-                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Progression (%)</label>
-                    <input type="range" id="editProgress" min="0" max="100" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
-                    <div id="progVal" class="text-right text-xs font-bold text-blue-600 mt-1">0%</div>
-                </div>
-                <div class="flex justify-end gap-3 pt-4">
-                    <button onclick="closeModal()" class="px-4 py-2 text-slate-500 hover:bg-slate-100 rounded-lg transition">Annuler</button>
-                    <button onclick="saveChanges()" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition">Enregistrer</button>
-                </div>
+                NAS local + Cloud immuable dès le mois 3 pour garantir la protection totale des données.
             </div>
         </div>
     </div>
 
     <script>
-        let tasks = [
-            { id: 1, name: "Audit infrastructure SMF", start: 1, duration: 8, progress: 100, color: "#3b82f6" },
-            { id: 2, name: "Plan de migration Microsoft 365", start: 7, duration: 10, progress: 80, color: "#10b981" },
-            { id: 3, name: "Configuration Tenant & Sécurité", start: 15, duration: 12, progress: 40, color: "#f59e0b" },
-            { id: 4, name: "Migration boîtes mails (Batch 1)", start: 25, duration: 15, progress: 10, color: "#8b5cf6" },
-            { id: 5, name: "Déploiement OneDrive / SharePoint", start: 35, duration: 20, progress: 0, color: "#ec4899" },
-            { id: 6, name: "Support post-migration", start: 50, duration: 10, progress: 0, color: "#64748b" }
+        const tasks = [
+            { name: "Migration Réseau (Palo Alto)", start: 0, duration: 2, phase: 1 },
+            { name: "AD vers M365 & Identité", start: 2, duration: 1, phase: 1 },
+            { name: "Migration Stockage (NAS/Cloud)", start: 2, duration: 2, phase: 1 },
+            { name: "Mise en place Stratégie 4-3-2", start: 3, duration: 1, phase: 1 },
+            { name: "Setup Monitoring & Sécu (EDR/PRTG)", start: 4, duration: 2, phase: 1 },
+            
+            { name: "Usine Pilote : Wolfisheim", start: 6, duration: 3, phase: 2 },
+            { name: "Déploiement : Lingolsheim", start: 9, duration: 3, phase: 2 },
+            { name: "Déploiement : Mittelhausbergen", start: 12, duration: 3, phase: 2 },
+            
+            { name: "Migration ERP Sylob", start: 15, duration: 4, phase: 3 },
+            { name: "IoT Edge & Data Machines", start: 17, duration: 3, phase: 3 },
+            { name: "Formation Utilisateurs", start: 19, duration: 3, phase: 3 },
+            
+            { name: "Audit Sécurité Final", start: 22, duration: 1, phase: 4 },
+            { name: "Passage en Mode RUN (Support)", start: 23, duration: 1, phase: 4 }
         ];
 
-        let currentId = null;
-        const colWidth = 40;
+        const startMonth = 4; // Mai
+        const startYear = 2026;
+        const monthLabels = ["Jan", "Fév", "Mars", "Avr", "Mai", "Juin", "Juil", "Août", "Sept", "Oct", "Nov", "Déc"];
+        const columnWidth = 45;
+        const totalMonths = 24;
 
-        function renderGantt() {
-            const range = parseInt(document.getElementById('viewRange').value);
-            const header = document.getElementById('timelineHeader');
-            const labels = document.getElementById('taskLabels');
-            const body = document.getElementById('timelineBody');
-            
-            header.innerHTML = '';
-            labels.innerHTML = '';
-            body.innerHTML = '';
+        const header = document.getElementById('header-months');
+        const labelsContainer = document.getElementById('labels-container');
+        const rowsContainer = document.getElementById('timeline-rows');
 
-            // 1. Render Header
-            const startTimestamp = new Date();
-            for (let i = 0; i < range; i++) {
-                const date = new Date(startTimestamp);
-                date.setDate(date.getDate() + i);
-                const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-                
-                header.innerHTML += `
-                    <div class="day-cell ${isWeekend ? 'weekend' : ''}">
-                        ${date.getDate()}/${date.getMonth() + 1}
-                    </div>
-                `;
+        // Génération des mois
+        for (let i = 0; i < totalMonths; i++) {
+            const currentMonthTotal = startMonth + i;
+            const year = startYear + Math.floor(currentMonthTotal / 12);
+            const label = monthLabels[currentMonthTotal % 12];
+            header.innerHTML += `<div class="month-header">${label} ${year}</div>`;
+        }
+
+        // Génération des lignes
+        tasks.forEach(task => {
+            // Créer le label à gauche
+            const labelDiv = document.createElement('div');
+            labelDiv.className = 'task-label-cell';
+            labelDiv.innerText = task.name;
+            labelsContainer.appendChild(labelDiv);
+
+            // Créer la ligne de timeline
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'gantt-row';
+            rowDiv.style.width = (totalMonths * columnWidth) + 'px';
+
+            // Ajouter les lignes de grille
+            for (let i = 0; i < totalMonths; i++) {
+                rowDiv.innerHTML += `<div class="grid-line"></div>`;
             }
 
-            // 2. Render Rows
-            tasks.forEach(task => {
-                // Label
-                labels.innerHTML += `
-                    <div class="gantt-row px-4 text-sm font-medium text-slate-700 truncate border-b border-slate-100" title="${task.name}">
-                        ${task.name}
-                    </div>
-                `;
-
-                // Row with grid lines and task bar
-                const row = document.createElement('div');
-                row.className = 'gantt-row relative';
-                row.style.width = (range * colWidth) + 'px';
-                
-                // Add background cells
-                for (let i = 0; i < range; i++) {
-                    const date = new Date(startTimestamp);
-                    date.setDate(date.getDate() + i);
-                    const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-                    row.innerHTML += `<div class="day-cell ${isWeekend ? 'weekend' : ''}"></div>`;
-                }
-
-                // Add task bar
-                const barContainer = document.createElement('div');
-                barContainer.className = 'bar-container';
-                barContainer.style.left = ((task.start - 1) * colWidth) + 'px';
-                
-                barContainer.innerHTML = `
-                    <div class="task-bar" style="width: ${task.duration * colWidth}px; background-color: ${task.color}" onclick="openModal(${task.id})">
-                        <div class="progress-fill" style="width: ${task.progress}%"></div>
-                        <div class="task-text">${task.progress}%</div>
-                    </div>
-                `;
-                
-                row.appendChild(barContainer);
-                body.appendChild(row);
-            });
-        }
-
-        function openModal(id) {
-            currentId = id;
-            const task = tasks.find(t => t.id === id);
-            document.getElementById('editName').value = task.name;
-            document.getElementById('editStart').value = task.start;
-            document.getElementById('editDuration').value = task.duration;
-            document.getElementById('editProgress').value = task.progress;
-            document.getElementById('progVal').innerText = task.progress + '%';
-            document.getElementById('modal').classList.remove('hidden');
-        }
-
-        function closeModal() {
-            document.getElementById('modal').classList.add('hidden');
-        }
-
-        function saveChanges() {
-            const task = tasks.find(t => t.id === currentId);
-            task.name = document.getElementById('editName').value;
-            task.start = parseInt(document.getElementById('editStart').value);
-            task.duration = parseInt(document.getElementById('editDuration').value);
-            task.progress = parseInt(document.getElementById('editProgress').value);
-            closeModal();
-            renderGantt();
-        }
-
-        function addTask() {
-            const newId = tasks.length > 0 ? Math.max(...tasks.map(t => t.id)) + 1 : 1;
-            tasks.push({
-                id: newId,
-                name: "Nouvelle étape SMF",
-                start: 5,
-                duration: 7,
-                progress: 0,
-                color: "#6366f1"
-            });
-            renderGantt();
-        }
-
-        // Update range value display
-        document.getElementById('editProgress').addEventListener('input', function(e) {
-            document.getElementById('progVal').innerText = e.target.value + '%';
+            // Ajouter la barre
+            const bar = document.createElement('div');
+            bar.className = `bar phase-${task.phase}`;
+            bar.style.left = (task.start * columnWidth + 4) + 'px';
+            bar.style.width = (task.duration * columnWidth - 8) + 'px';
+            bar.innerText = task.duration >= 2 ? `${task.duration} mois` : "";
+            
+            rowDiv.appendChild(bar);
+            rowsContainer.appendChild(rowDiv);
         });
-
-        window.onload = renderGantt;
     </script>
 </body>
 </html>
